@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+
+  application:
+    build:
+      context: ../  # Root of the repository; assumes Dockerfile uses relative paths
+      dockerfile: deploy/Dockerfile  # Path to Dockerfile for Service A
+    container_name: pmt_application
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    environment:
+      - PMT__EXTERNAL__POSTGRES__HOST=database
+
+  database:
+    image: postgres:17
+    container_name: pmt_database
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -h python_microservice_templates" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=python_microservice_templates
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  database_data:
+    driver: local
