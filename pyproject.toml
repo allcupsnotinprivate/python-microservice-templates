@@ -1,0 +1,77 @@
+    [project]
+    name = "python-microservice-templates"
+    version = "0.1.0"
+    description = "A production-ready FastAPI template with PostgreSQL, SQLAlchemy, Alembic, Docker support and etc."
+    authors = [
+        { name = "allcupsnotinprivate", email = "" }
+    ]
+    dependencies = [
+        "aioinject>=0.38.1",
+        "fastapi>=0.115.12",
+        "uvicorn>=0.34.2",
+        "sqlalchemy>=2.0.41",
+        "pytz>=2025.2",
+        "psycopg>=3.2.9",
+        "greenlet>=3.2.2",
+        "alembic>=1.16.1",
+        "pydantic-settings>=2.9.1",
+        "apscheduler>=3.11.0",
+    ]
+    readme = "README.md"
+    requires-python = ">= 3.12"
+
+    [build-system]
+    requires = ["hatchling"]
+    build-backend = "hatchling.build"
+
+    [tool.rye]
+    managed = true
+    dev-dependencies = [
+        "typer>=0.16.0",
+        "mypy>=1.16.0",
+        "sqlalchemy[mypy]>=2.0.41",
+        "pytz[mypy]>=2025.2",
+        "types-pytz>=2025.2.0.20250516",
+        "bandit>=1.8.3",
+    ]
+
+    [tool.hatch.metadata]
+    allow-direct-references = true
+
+    [tool.hatch.build.targets.wheel]
+    packages = ["src/app"]
+
+    [tool.ruff]
+    line-length = 120
+    indent-width = 4
+    fix = true
+    output-format = "grouped"
+
+    [tool.ruff.format]
+    quote-style = "double"
+    docstring-code-format = true
+
+    [tool.ruff.lint]
+    ignore = ["F841", "E722", "E712"]
+    extend-select = ["I"]
+    extend-unsafe-fixes = ["E", "F401"]
+
+    [tool.mypy]
+    python_version = "3.12"
+    plugins = [
+        "pydantic.mypy",
+        "sqlalchemy.ext.mypy.plugin"
+    ]
+    strict = true
+    mypy_path = "src"
+    ignore_missing_imports = true
+
+    [tool.bandit]
+    skips = ["B104"]
+
+    [tool.rye.scripts]
+    migrations = { cmd = ["python", "src/app/infrastructure/database/migrations/cli.py"], env-file = ".dev.env" }
+    asgi = { cmd = ["python", "src/app/main.py"], env-file = ".dev.env" }
+    typecheck = { cmd = ["mypy", "src/"] }
+    security-check = { cmd = ["sh", "-c", "bandit -c pyproject.toml -r src/"] }
+    check-all = { cmd = ["sh", "-c", "ruff format src/ && ruff check src/ && mypy src/ && bandit -c pyproject.toml -r src/"] }
