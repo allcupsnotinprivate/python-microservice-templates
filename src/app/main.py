@@ -15,4 +15,6 @@ if __name__ == "__main__":
         host=args.host,
         port=args.port,
         workers=args.workers,
+        log_config=None,
+        log_level=None,
     )

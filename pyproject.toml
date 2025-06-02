@@ -6,17 +6,19 @@
         { name = "allcupsnotinprivate", email = "" }
     ]
     dependencies = [
-        "aioinject>=0.38.1",
-        "fastapi>=0.115.12",
-        "uvicorn>=0.34.2",
-        "sqlalchemy>=2.0.41",
-        "pytz>=2025.2",
-        "psycopg>=3.2.9",
-        "greenlet>=3.2.2",
-        "alembic>=1.16.1",
-        "pydantic-settings>=2.9.1",
-        "apscheduler>=3.11.0",
-    ]
+    "aioinject>=0.38.1",
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "sqlalchemy>=2.0.41",
+    "pytz>=2025.2",
+    "psycopg>=3.2.9",
+    "greenlet>=3.2.2",
+    "alembic>=1.16.1",
+    "pydantic-settings>=2.9.1",
+    "apscheduler>=3.11.0",
+    "orjson>=3.10.18",
+    "loguru>=0.7.3",
+]
     readme = "README.md"
     requires-python = ">= 3.12"
 
