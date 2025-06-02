@@ -8,6 +8,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.infrastructure.aClasses import AInfrastructure
 
+from ...utils.tokens import generate_prefixed_uuid
+from .logs import wrap_with_log_context
 from .types import CronArgs, DateArgs, IntervalArgs, JobSchedule, TriggerType
 
 
@@ -83,8 +85,10 @@ class SchedulerManager(ASchedulerManager):
         replace_existing: bool = False,
     ) -> None:
         trigger = self._build_trigger(schedule)
+        job_id = job_id or generate_prefixed_uuid("job", length=16)
+        wrapped_func = wrap_with_log_context(job_id=job_id, job_name=name)(func)
         self.scheduler.add_job(
-            func=func,
+            func=wrapped_func,
             trigger=trigger,
             args=args,
             kwargs=kwargs,

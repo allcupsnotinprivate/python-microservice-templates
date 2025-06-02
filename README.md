@@ -17,6 +17,7 @@ via APScheduler, and Docker support. It’s ideal for quickly bootstrapping micr
 * 🧪 Unified quality checks with **type-checking** (`mypy`), **linting** (`ruff`), and **security** (`bandit`).
 * 🎯 Based on **Python 3.12** with strict typing configuration.
 * 🧩 Pre-structured for adding REST endpoints (e.g., `conversations`) and background jobs.
+* 📢 Loguru — structured, context-aware logging with automatic correlation for HTTP requests and background jobs.
 
 ## 🛠️ Tech Stack
 
@@ -29,14 +30,11 @@ via APScheduler, and Docker support. It’s ideal for quickly bootstrapping micr
 | Migrations       | [Alembic](https://alembic.sqlalchemy.org/)                                                                                                                                           |
 | Scheduler        | [APScheduler](https://apscheduler.readthedocs.io/en/latest/)                                                                                                                         |
 | DI Container     | [aioinject](https://pypi.org/project/aioinject/)                                                                                                                                     |
+| Logging          | [loguru](https://github.com/Delgan/loguru)                                                                                                                                           |
 | Async Runtime    | [Uvicorn](https://www.uvicorn.org/)                                                                                                                                                  |
 | Dev Tools        | [Rye](https://rye-up.com/), [Hatch](https://hatch.pypa.io/), [Ruff](https://docs.astral.sh/ruff/), [Mypy](http://mypy-lang.org/), [Bandit](https://bandit.readthedocs.io/en/latest/) |
 | Packaging        | [Hatchling](https://hatch.pypa.io/latest/build/)                                                                                                                                     |
 | Containerization | [Docker](https://www.docker.com/)                                                                                                                                                    |
-
----
-
-Вот заполненный раздел **Getting Started** на английском языке, включая требования, установку и запуск:
 
 ---
 
@@ -109,14 +107,16 @@ The environment is configured using environment variables with the prefix `PMT__
 
 Main PostgreSQL connection variables:
 
-| Variable                               | Description                           | Example value                      |
-|----------------------------------------|---------------------------------------|------------------------------------|
-| `PMT__EXTERNAL__POSTGRES__HOST`        | Database host                         | `localhost` or `database` (docker) |
-| `PMT__EXTERNAL__POSTGRES__PORT`        | Database port                         | `5432`                             |
-| `PMT__EXTERNAL__POSTGRES__DATABASE`    | Database name                         | `python_microservice_templates`    |
-| `PMT__EXTERNAL__POSTGRES__USER`        | Database user                         | `postgres`                         |
-| `PMT__EXTERNAL__POSTGRES__PASSWORD`    | Database password                     | `postgres`                         |
-| `PMT__EXTERNAL__POSTGRES__AUTOMIGRATE` | Whether to run auto migrations (bool) | `true` (default) or `false`        |
+| Variable                               | Description                                                                                                      | Example value                      |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------------|------------------------------------|
+| `PMT__INTERNAL__LOG__ENABLE`           | Logger enable flag                                                                                               | `true` (default) or `false`        |
+| `PMT__INTERNAL__LOG__LEVEL`            | Minimum log level to output. See [Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels) | `20` (default)                     |
+| `PMT__EXTERNAL__POSTGRES__HOST`        | Database host                                                                                                    | `localhost` or `database` (docker) |
+| `PMT__EXTERNAL__POSTGRES__PORT`        | Database port                                                                                                    | `5432`                             |
+| `PMT__EXTERNAL__POSTGRES__DATABASE`    | Database name                                                                                                    | `python_microservice_templates`    |
+| `PMT__EXTERNAL__POSTGRES__USER`        | Database user                                                                                                    | `postgres`                         |
+| `PMT__EXTERNAL__POSTGRES__PASSWORD`    | Database password                                                                                                | `postgres`                         |
+| `PMT__EXTERNAL__POSTGRES__AUTOMIGRATE` | Whether to run auto migrations (bool)                                                                            | `true` (default) or `false`        |
 
 You can use a `.env` file with the following content (check `.env.example`):
 
@@ -130,6 +130,48 @@ PMT__EXTERNAL__POSTGRES__AUTOMIGRATE=true
 ```
 
 These environment variables are loaded automatically when running the app or migration CLI.
+
+---
+
+## 📢 Logging
+
+This project utilizes Loguru for robust, structured, and context-aware logging. It's pre-configured to enhance 
+observability for both HTTP requests and background tasks.
+
+---
+
+
+### Key Logging Features:
+1. **Structured Logging**: logs are often configured to output in JSON format (configurable), making them easily parsable by log management systems.
+2. **Contextual Information**: logs are automatically enriched with relevant context, such as request IDs or job identifiers.
+3. **Ease of Use**: loguru provides a simple and powerful API for logging.
+
+---
+
+
+### HTTP Request Logging
+
+For incoming HTTP requests, logging is enhanced with a correlation ID to group all log entries related to a single request:
+
+1. **X-Request-ID Header**: if an incoming request includes an `X-Request-ID` header, its value is used as the request_id 
+in the log context. This is useful for tracing requests across multiple services.
+2. **Auto-generated ID**: if no `X-Request-ID` header is present, a unique `request_id` is automatically generated 
+(e.g., `http-e9a869c4301`).
+
+This `request_id` is available in the log record's extra dictionary and can be included in your log format.
+
+---
+
+### Background Task Logging
+
+For background tasks executed by APScheduler, logs are enriched with specific job context:
+1. **Context ID**: each execution of a job gets a unique, auto-generated context_id (e.g., `job-3dd5e13a136e`). 
+This helps distinguish log entries from different runs of the same job.
+2. **Job ID (job_id)**: the unique identifier assigned to the job when it was scheduled (e.g., `sync_external_data_job`).
+3. **Job Label (`job_label`)**: a human-readable label or name for the job, if provided during scheduling, to make logs 
+more understandable.
+
+These identifiers are also available in the log record's extra dictionary.
 
 ---
 
@@ -287,15 +329,21 @@ the main folders and files:
         ├── main.py           # App entry point
         ├── asgi.py           # ASGI app instance for async serving
         ├── api/              # API layer (REST endpoints, handlers, schemas)
-        │   └── rest/
-        │       └── v1/       # API versioning, e.g. conversations endpoints
-        │   └── tasks/        # Scheduled tasks
+        │   └── rest/
+        │   └── v1/       # API versioning, e.g. conversations endpoints
+        │   └── tasks/        # Scheduled tasks
         ├── configs/          # Application configuration modules
         ├── container/        # Dependency injection container & wrappers
         ├── exceptions/       # Custom exceptions & error handling
         ├── infrastructure/  # DB access, migrations, scheduling, etc.
-        │   └── database/
-        │       └── migrations/ # Alembic migrations and CLI
+        │   ├── database/
+        │   │   └── migrations/ # Alembic migrations and CLI
+        │   └── scheduler/    # Scheduler setup and configuration
+        ├── logs/             # Logging configuration and utilities
+        │   ├── logger.py     # Loguru setup and main logger configuration
+        │   └── types.py      # Type definitions related to logging (e.g., context)
+        ├── middlewares/      # FastAPI middlewares
+        │   └── request_context.py # Middleware for setting up logging context (e.g., X-Request-ID)
         ├── models/           # ORM models / domain entities
         ├── repositories/     # Data access layer (repositories pattern)
         ├── service_layer/    # Business logic and transaction coordination

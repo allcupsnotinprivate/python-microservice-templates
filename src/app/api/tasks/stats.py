@@ -13,4 +13,3 @@ async def get_conversations_stats(conversations_service: Injected[AConversations
         if not conversations:
             break
         conversations_count += len(conversations)
-    print(f"Conversations exist at the moment: {conversations_count}")
